@@ -1,4 +1,3 @@
-# src/extractors/pdf_extractor.py
 from pathlib import Path
 from src.utils import clean_text
 

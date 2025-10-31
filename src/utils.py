@@ -1,9 +1,7 @@
-# src/utils.py
 import os
 from pathlib import Path
 from typing import Union
 
-# Project root = parent of src/
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def _resolve_dir(env_key: str, default_rel: str) -> Path:
@@ -11,11 +9,9 @@ def _resolve_dir(env_key: str, default_rel: str) -> Path:
     p = Path(v) if v else (PROJECT_ROOT / default_rel)
     return p.resolve()
 
-# Directories (env overrides respected)
 UPLOAD_DIR: Path = _resolve_dir("UPLOAD_DIR", "data/uploads")
 CHROMA_DIR: Path = _resolve_dir("CHROMA_DIR", "data/chroma")
 
-# Ensure they exist
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 CHROMA_DIR.mkdir(parents=True, exist_ok=True)
 

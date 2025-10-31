@@ -1,4 +1,3 @@
-# indexer.py
 import os
 from typing import List, Dict, Tuple, Optional
 from pathlib import Path
@@ -85,11 +84,9 @@ def delete_by_prefix(doc_id_prefix: str) -> int:
     Delete all chunks whose id starts with <doc_id_prefix>- .
     Returns count deleted (best-effort).
     """
-    # Fetch ids via where filter on stored doc_id if you saved it in metadata
-    # Fallback: try a wide query and filter client-side (cheap for small sets).
+    
     try:
-        # Chroma doesn't support prefix delete directly; we approximate:
-        # get all ids by querying the collection (may be large—use carefully).
+        
         res = collection.get(include=["metadatas"])
         ids = res.get("ids", [])
         target_ids = [i for i in ids if i.startswith(f"{doc_id_prefix}-")]

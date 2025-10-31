@@ -1,0 +1,36 @@
+# --- Environment & Secrets ---
+.env
+.env.local
+*.key
+*.pem
+cookies.txt
+
+# --- Virtual Environments ---
+.venv/
+venv/
+env/
+
+# --- Data & Embeddings ---
+/data/uploads/*
+/data/chroma/*
+
+# --- Python Cache ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Logs & Temp Files ---
+*.log
+*.tmp
+*.wav
+*.mp3
+*.mp4
+*.mkv
+*.webm
+
+# --- IDE & System Files ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

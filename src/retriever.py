@@ -1,4 +1,3 @@
-# src/retriever.py
 from typing import Dict, List, Tuple, Optional
 
 from src.indexer import search
@@ -57,17 +56,14 @@ def _where_pushdown(where: Optional[Dict]) -> Optional[Dict]:
         out["source"] = where["source"]
     if "type" in where:
         out["type"] = where["type"]
-    # You could also forward exact matches for ext/name/path/url if you add UI for them.
     return out or None
 
 def ask(question: str, top_k: int = 6, where: Optional[Dict] = None) -> Dict:
     top_k = max(1, int(top_k))
 
-    # Pre-filter at vector DB where possible
     pushdown = _where_pushdown(where)
     raw_hits: List[Tuple[str, Dict]] = search(question, top_k=top_k * 3, where=pushdown)
 
-    # Post-filter for contains/extension logic and cap to top_k
     hits = []
     for d, m in raw_hits:
         m = m or {}
@@ -78,7 +74,6 @@ def ask(question: str, top_k: int = 6, where: Optional[Dict] = None) -> Dict:
 
     context = "\n\n".join(d for d, _ in hits) if hits else ""
 
-    # Import here so CHAT_PROVIDER set in app.py takes effect before first call
     from src.llm import chat_rag
     answer = chat_rag(question, context) if context else "No relevant context found."
 

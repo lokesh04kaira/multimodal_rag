@@ -5,7 +5,6 @@ from typing import List, Optional
 def _env(k: str, d: str = "") -> str:
     return os.getenv(k, d)
 
-# ---------- Lazy Gemini init (REST) ----------
 _genai = None
 def _get_genai():
     global _genai
@@ -24,26 +23,22 @@ def _get_genai():
         print("GEMINI INIT ERROR:", e)
         return None
 
-# ---------- Embeddings ----------
 def _embed_gemini(texts: List[str]) -> Optional[List[List[float]]]:
     genai = _get_genai()
     if genai is None:
         return None
     try:
-        # Prefer batch API if present
         if hasattr(genai, "batch_embed_contents"):
             out = genai.batch_embed_contents(
                 model=_env("MODEL_GEMINI", "text-embedding-004"),
                 contents=[{"parts": [t or ""]} for t in texts],
                 task_type="retrieval_document",
             )
-            # SDK may return dict or an object with .embeddings
             if isinstance(out, dict) and "embeddings" in out:
                 return [e["values"] for e in out["embeddings"]]
             if hasattr(out, "embeddings"):
                 return [getattr(e, "values", e) for e in out.embeddings]
 
-        # Fallback: call per item
         embs: List[List[float]] = []
         for t in texts:
             res = genai.embed_content(
@@ -82,13 +77,11 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
     arr = _local_sbert.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
     return arr.tolist()
 
-# ---------- Chat ----------
 def _answer_locally(prompt: str, context: str) -> str:
     if not context.strip():
         return "No relevant context found."
     sents = re.split(r'(?<=[.!?])\s+', context.strip())
 
-    # DEDUPE sentences (case/space-insensitive)
     seen, dsents = set(), []
     for s in sents:
         norm = " ".join(s.lower().split())
@@ -121,11 +114,9 @@ def _system_prompt() -> str:
 def chat_rag(prompt: str, context: str) -> str:
     provider = _env("CHAT_PROVIDER", "local").lower()
 
-    # Local extractive fallback
     if provider != "gemini":
         return _answer_locally(prompt, context)
 
-    # Gemini reasoning over retrieved context
     genai = _get_genai()
     if genai is None:
         return _answer_locally(prompt, context)

@@ -1,11 +1,9 @@
-# app.py
 
-# --- PATH bootstrap: ensure project root is on sys.path ---
 import os, sys
 from pathlib import Path
 
-APP_DIR = os.path.dirname(os.path.abspath(__file__))          # ...\multimodal-rag\src
-PROJECT_ROOT = os.path.dirname(APP_DIR)                       # ...\multimodal-rag
+APP_DIR = os.path.dirname(os.path.abspath(__file__))         
+PROJECT_ROOT = os.path.dirname(APP_DIR)                      
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 # -----------------------------------------------------------
@@ -23,18 +21,15 @@ def _is_audio(meta: dict) -> bool:
 def _is_video(meta: dict) -> bool:
     return str(meta.get("path", "")).lower().endswith(VID_EXT)
 
-# Load environment BEFORE importing project modules
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
 import streamlit as st
 
-# Project imports (safe now that .env is loaded)
 from src.ingest import ingest_path, extract_any, ingest_youtube
 from src.retriever import ask
 from src.utils import UPLOAD_DIR
 
-# Ensure upload dir exists
 Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
 # ---------------- UI ----------------
@@ -49,16 +44,13 @@ with st.sidebar:
     )
     if up:
         for f in up:
-            # sanitize filename to avoid path traversal
             safe_name = os.path.basename(f.name).replace("\\", "_").replace("/", "_")
             dest = Path(UPLOAD_DIR) / safe_name
 
-            # Save file
             with open(dest, "wb") as out:
                 out.write(f.getbuffer())
             st.caption(f"Saved to: {dest}")
 
-            # Preview extraction BEFORE indexing
             with st.spinner(f"Previewing extraction for {safe_name}..."):
                 try:
                     preview = extract_any(str(dest))
@@ -66,7 +58,6 @@ with st.sidebar:
                     preview = f"[Error extracting: {e}]"
                 st.write("Extracted preview:", (str(preview)[:200] if preview else "[empty]"))
 
-            # Index (ingest) it
             with st.spinner(f"Indexing {safe_name}..."):
                 try:
                     ingest_stats = ingest_path(str(dest))
@@ -100,7 +91,6 @@ scope = st.selectbox(
     ],
 )
 
-# Optional filename dropdown (populated from uploads folder)
 selected_file = None
 if scope == "Only this filename…":
     files = sorted([p.name for p in Path(UPLOAD_DIR).glob("*")])
@@ -115,7 +105,6 @@ q = st.text_input("Ask a question about your knowledge base")
 ask_clicked = st.button("Ask")
 
 if ask_clicked and q:
-    # Build strict 'where' filter for retriever
     where = None
     if scope == "Only YouTube links":
         where = {"source": "youtube"}
@@ -130,11 +119,10 @@ if ask_clicked and q:
 
     with st.spinner("Thinking..."):
         try:
-            res = ask(q, where=where)  # retriever should pre-filter hits using 'where'
+            res = ask(q, where=where)  
         except Exception as e:
             res = {"answer": f"[Error generating answer: {e}]", "contexts": []}
 
-    # Post-filter by extension/filename just in case
     ctxs = res.get("contexts", []) or []
     if scope == "Only images":
         ctxs = [(d, m) for (d, m) in ctxs if isinstance(m, dict) and _is_image(m)]
@@ -145,10 +133,8 @@ if ask_clicked and q:
     elif scope == "Only this filename…" and selected_file:
         ctxs = [(d, m) for (d, m) in ctxs if isinstance(m, dict) and selected_file.lower() in str(m.get("path", "")).lower()]
 
-    # Recompute the answer using ONLY filtered context (prevents mixing modalities)
     if ctxs:
         filtered_context = "\n\n".join(str(d) for d, _ in ctxs)
-        # Import chat_rag *after* CHAT_PROVIDER is set to ensure correct backend
         from src.llm import chat_rag
         try:
             res["answer"] = chat_rag(q, filtered_context)

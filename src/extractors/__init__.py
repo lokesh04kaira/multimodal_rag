@@ -1,4 +1,3 @@
-# src/extractors/__init__.py
 from .pdf_extractor import extract_pdf
 from .docx_extractor import extract_docx
 from .pptx_extractor import extract_pptx

@@ -1,4 +1,3 @@
-# src/extractors/av_extractor.py
 import os, tempfile, subprocess
 from pathlib import Path
 from typing import Optional
@@ -21,7 +20,6 @@ def _to_wav(in_path: str) -> str:
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         return out_path
     except Exception as e:
-        # Ensure cleanup if ffmpeg fails
         try: os.remove(out_path)
         except Exception: pass
         raise RuntimeError(f"ffmpeg failed: {e}") from e
@@ -44,7 +42,6 @@ def _postproc(text: str) -> str:
 def _transcribe_wav(wav_path: str) -> str:
     model_size = os.getenv("WHISPER_MODEL", "base").strip()
 
-    # faster-whisper first
     try:
         from faster_whisper import WhisperModel
         model = WhisperModel(model_size, device=os.getenv("WHISPER_DEVICE", "cpu"), compute_type=os.getenv("WHISPER_COMPUTE", "int8"))
@@ -59,7 +56,6 @@ def _transcribe_wav(wav_path: str) -> str:
     except Exception:
         pass
 
-    # Fallback: openai-whisper
     try:
         import whisper
         model = whisper.load_model(model_size)
@@ -72,7 +68,7 @@ def _transcribe_wav(wav_path: str) -> str:
         )
         return _postproc(res.get("text", ""))
     except Exception:
-        return ""  # return empty so caller can mark "no text extracted"
+        return ""  
 
 def extract_audio(path: str) -> str:
     wav = _to_wav(path)
@@ -83,7 +79,7 @@ def extract_audio(path: str) -> str:
         except Exception: pass
 
 def extract_video(path: str) -> str:
-    wav = _to_wav(path)  # extract audio track
+    wav = _to_wav(path)  
     try:
         return _transcribe_wav(wav)
     finally:

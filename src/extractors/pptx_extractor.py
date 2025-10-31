@@ -1,4 +1,3 @@
-# src/extractors/pptx_extractor.py
 from pathlib import Path
 from src.utils import clean_text
 

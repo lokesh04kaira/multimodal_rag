@@ -1,14 +1,12 @@
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
-# --- text / doc extractors ---
 from src.extractors.pdf_extractor import extract_pdf
 from src.extractors.docx_extractor import extract_docx
 from src.extractors.pptx_extractor import extract_pptx
 from src.extractors.md_txt_extractor import extract_md, extract_txt
 from src.extractors.image_extractor import extract_image
 
-# --- AV (audio/video) + YouTube (optional) ---
 HAVE_AV = True
 try:
     from src.extractors.av_extractor import extract_audio, extract_video
@@ -23,7 +21,6 @@ except Exception:
 
 from src.indexer import add_document
 
-# Supported extensions (case-insensitive)
 SUPPORTED = {
     ".pdf", ".docx", ".pptx", ".ppt", ".md", ".txt",
     ".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff",
@@ -31,7 +28,6 @@ SUPPORTED = {
     ".mp4", ".mov", ".mkv"
 }
 
-# Map extension → modality type for consistent metadata and filtering
 EXT_TYPE = {
     ".pdf": "text", ".docx": "text", ".pptx": "text", ".ppt": "text",
     ".md": "text", ".txt": "text",
@@ -70,16 +66,14 @@ def extract_any(path: str) -> str:
                 return ""
             return extract_audio(str(p)) or ""
 
-        # Video
+        
         if ext in (".mp4", ".mov", ".mkv"):
             if not HAVE_AV:
                 return ""
             return extract_video(str(p)) or ""
     except Exception as e:
-        # Let caller decide how to report; just surface as empty
         return f""
 
-    # Unsupported extension
     return ""
 
 def ingest_path(path: str):
@@ -118,7 +112,6 @@ def ingest_path(path: str):
         return {"path": str(p), "chars": 0, "skipped": f"extract failed: {e}"}
 
     if not text:
-        # Nothing useful extracted (e.g., empty OCR/transcript)
         return {"path": str(p), "chars": 0, "skipped": "no text extracted"}
 
     meta = {

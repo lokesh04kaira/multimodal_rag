@@ -1,4 +1,3 @@
-# src/extractors/image_extractor.py
 import os
 import re
 from typing import List, Tuple
@@ -9,7 +8,6 @@ import pytesseract
 
 from src.utils import clean_text
 
-# Optional Tesseract binary and data path (useful on Windows)
 if os.getenv("TESSERACT_CMD"):
     pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD")
 if os.getenv("TESSDATA_PREFIX"):
@@ -29,14 +27,12 @@ def _prep(img: Image.Image) -> Image.Image:
 
     arr = np.asarray(g, dtype=np.uint8)
 
-    # Adaptive threshold: 15x15 local mean, similar to cv2.adaptiveThreshold
     k = 15
     pad = k // 2
     pad_arr = np.pad(arr, pad, mode="edge").astype(np.float32)
 
     cumsum = pad_arr.cumsum(axis=0).cumsum(axis=1)
     h, w = arr.shape
-    # sums over kxk window using integral image
     sums = (
         cumsum[k:, k:]
         - cumsum[:-k, k:]
@@ -62,7 +58,6 @@ def _try_rotations(img: Image.Image) -> List[Tuple[int, Image.Image]]:
     return [(r, img.rotate(r, expand=True)) for r in rots]
 
 def _merge_texts(parts: List[str]) -> str:
-    # Join, normalize whitespace, strip repeated lines
     joined = "\n".join(p for p in parts if p and p.strip())
     lines = [l.strip() for l in joined.splitlines()]
     seen, out = set(), []
@@ -81,7 +76,6 @@ def extract_image(path: str) -> str:
     img = Image.open(path)
     prepped = _prep(img)
 
-    # Choose PSM candidates based on aspect ratio (single-line vs block)
     w, h = prepped.size
     aspect = w / max(1, h)
     likely_single_line = aspect > 6.0
@@ -97,20 +91,15 @@ def extract_image(path: str) -> str:
 
     merged = _merge_texts(tess_results)
 
-    # If Tesseract struggled, try EasyOCR and merge
     if not merged:
         try:
             import easyocr
             reader = easyocr.Reader(["en"], gpu=False)
-            # Using the original path for layout detection, but we can also pass the prepped image array
             easy_lines = reader.readtext(path, detail=0)
             merged = _merge_texts(easy_lines)
         except Exception:
             merged = ""
 
-    # Final cleaning:
-    # - Keep punctuation & digits (don’t strip to only A–Z)
-    # - Collapse excessive whitespace
     final = clean_text(merged)
 
     return final

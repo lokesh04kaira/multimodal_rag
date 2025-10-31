@@ -1,4 +1,3 @@
-# src/extractors/youtube_extractor.py
 import os
 import tempfile
 from pathlib import Path
@@ -38,7 +37,6 @@ def _captions_text(video_id: str) -> str | None:
         langs = [x.strip() for x in os.getenv("YT_LANGS", "en,en-US,en-GB").split(",") if x.strip()]
         tlist = YouTubeTranscriptApi.list_transcripts(video_id)
 
-        # 1) Manually-created (preferred langs)
         try:
             t = tlist.find_manually_created_transcript(langs)
             items = t.fetch()
@@ -47,7 +45,6 @@ def _captions_text(video_id: str) -> str | None:
         except Exception:
             pass
 
-        # 2) Auto-generated (preferred langs)
         try:
             t = tlist.find_generated_transcript(langs)
             items = t.fetch()
@@ -56,7 +53,6 @@ def _captions_text(video_id: str) -> str | None:
         except Exception:
             pass
 
-        # 3) Any transcript (fallback: pick the first fetchable)
         for t in tlist:
             try:
                 items = t.fetch()
@@ -80,7 +76,6 @@ def extract_youtube(url: str) -> str:
     - Otherwise download bestaudio and run ASR.
     - Returns '' on failure.
     """
-    # 1) Try official captions
     try:
         vid = _video_id(url)
         cap = _captions_text(vid)
@@ -89,14 +84,13 @@ def extract_youtube(url: str) -> str:
     except Exception:
         pass
 
-    # 2) Fallback: download audio and transcribe
-    cookies = os.getenv("YT_COOKIES") or os.getenv("YT_COOKIES_PATH")  # optional
+    cookies = os.getenv("YT_COOKIES") or os.getenv("YT_COOKIES_PATH") 
     ydl_opts = {
         "format": "bestaudio/best",
         "quiet": True,
         "noplaylist": True,
         "nocheckcertificate": True,
-        "outtmpl": None,  # set after tmpdir is known
+        "outtmpl": None,  
     }
     if cookies and Path(cookies).exists():
         ydl_opts["cookiefile"] = cookies
